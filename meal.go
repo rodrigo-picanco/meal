@@ -29,7 +29,7 @@ type DSL struct {
 }
 
 func main() {
-        data, err := os.ReadFile("meal.yml")
+        data, err := os.ReadFile(os.Args[1])
         if err != nil {
                 log.Fatalf("reading error: %v", err)
         }
