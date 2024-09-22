@@ -3,6 +3,11 @@ monday (
         arroz_frito
 )
 
+tuesday (
+        arroz_com_feijao
+        pao_com_manteiga
+)
+
 arroz_com_feijao (
         louro 1u
         arroz 100g
@@ -13,4 +18,9 @@ arroz_frito (
         arroz 100g
         ovo 1u
         bacon 100g
+)
+
+pao_com_manteiga (
+        pao 1u
+        manteiga 25g
 )

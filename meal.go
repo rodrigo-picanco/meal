@@ -24,6 +24,7 @@ func run(program *Program) {
 
         meals := make(map[string]int)
         recipes := make(map[string]map[string]int)
+        units := make(map[string]string)
         result := make(map[string]int)
 
 	for _, statement := range program.Statements {
@@ -51,6 +52,11 @@ func run(program *Program) {
 					}
 					recipes[s.Name][i.Name] += i.Amount
 
+                                        if _, ok := units[i.Name]; !ok {
+                                                units[i.Name] = i.Unit
+                                        }
+
+
                                 default:
                                         fmt.Printf("Error: unexpected statement in weekday. Expected IngredientStatement, found %T\n", s)
                                         os.Exit(1)
@@ -73,7 +79,7 @@ func run(program *Program) {
 
         fmt.Println("Shopping list:")
         for ingredient, amount := range result {
-                fmt.Printf("%s %d\n", ingredient, amount)
+                fmt.Printf("%s %d%s\n", ingredient, amount, units[ingredient])
         }
 
 }
