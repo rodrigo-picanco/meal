@@ -1,9 +1,16 @@
 monday (
-        arroz_com_feijao 1u
+        arroz_com_feijao
+        arroz_frito
 )
 
 arroz_com_feijao (
         louro 1u
         arroz 100g
         feijao 100g
+)
+
+arroz_frito (
+        arroz 100g
+        ovo 1u
+        bacon 100g
 )

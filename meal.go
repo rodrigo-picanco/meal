@@ -20,32 +20,61 @@ func main() {
         run(program)
 }
 
-func run(node Node) {
+func run(program *Program) {
 
-        var recipes = make(map[string]int)
-        var ingredients = make(map[string]int)
+        meals := make(map[string]int)
+        recipes := make(map[string]map[string]int)
+        result := make(map[string]int)
 
-        switch node := node.(type) {
-        case *Program:
-                for _, s := range node.Statements {
-                        run(s)
-                }
-        case *WeekdayStatement:
-                for _, s := range node.Value {
-                        switch s := s.(type) {
-                        case *IngredientStatement:
-                                recipes[s.Name] += s.Amount
+	for _, statement := range program.Statements {
+		switch s := statement.(type) {
+		case *WeekdayStatement:
+			for _, s := range s.Meals {
+
+				switch s := s.(type) {
+				case *MealStatement:
+					if _, ok := meals[s.Name]; !ok {
+						meals[s.Name] = 0
+					}
+					meals[s.Name] += 1
+                                default:
+                                        fmt.Printf("Error: unexpected statement in weekday. Expected MealStatement, found %T\n", s)
+                                        os.Exit(1)
+				}
+			}
+		case *RecipeStatement:
+			for _, i := range s.Ingredients {
+				switch i := i.(type) {
+				case *IngredientStatement:
+					if _, ok := recipes[s.Name]; !ok {
+						recipes[s.Name] = make(map[string]int)
+					}
+					recipes[s.Name][i.Name] += i.Amount
+
+                                default:
+                                        fmt.Printf("Error: unexpected statement in weekday. Expected IngredientStatement, found %T\n", s)
+                                        os.Exit(1)
+				}
+
+			}
+		}
+	}
+
+        for meal, count := range meals {
+                recipe := recipes[meal]
+                for ingredient, amount := range recipe {
+                        if _, ok := result[ingredient]; !ok {
+                                result[ingredient] = 0
                         }
+                        result[ingredient] += amount * count
                 }
-        case *RecipeStatement:
-                for _, s := range node.Ingredients {
-                        switch s := s.(type) {
-                        case *IngredientStatement:
-                                ingredients[s.Name] += s.Amount
-                        }
-                }
+
         }
 
+        fmt.Println("Shopping list:")
+        for ingredient, amount := range result {
+                fmt.Printf("%s %d\n", ingredient, amount)
+        }
 
 }
 
@@ -63,7 +92,17 @@ type Program struct {
 type WeekdayStatement struct {
 	token   Token
 	Weekday string
-	Value   []Statement
+	Meals   []Statement
+}
+type MealStatement struct {
+	token Token
+	Name  string
+}
+
+func (ms *MealStatement) statementNode()       {}
+func (ms *MealStatement) TokenLiteral() string { return ms.token.Literal }
+func (ms *MealStatement) String() string {
+	return ms.token.Literal
 }
 func (ws *WeekdayStatement) statementNode()       {}
 func (ws *WeekdayStatement) TokenLiteral() string { return ws.token.Literal }
@@ -71,16 +110,18 @@ func (ws *WeekdayStatement) String() string {
 	var out bytes.Buffer
 	out.WriteString(ws.token.Literal)
 	out.WriteString(" ")
-	for _, s := range ws.Value {
+	for _, s := range ws.Meals {
 		out.WriteString(s.String())
 	}
 	return out.String()
 }
+
 type RecipeStatement struct {
 	token       Token
 	Name        string
 	Ingredients []Statement
 }
+
 func (rs *RecipeStatement) statementNode()       {}
 func (rs *RecipeStatement) TokenLiteral() string { return rs.token.Literal }
 func (rs *RecipeStatement) String() string {
@@ -91,17 +132,19 @@ func (rs *RecipeStatement) String() string {
 	out.WriteString(" ")
 	for _, s := range rs.Ingredients {
 		out.WriteString(s.String())
-                out.WriteString(" ")
+		out.WriteString(" ")
 	}
 	return out.String()
 }
+
 type IngredientStatement struct {
 	token  Token
 	Name   string
 	Amount int
 	Unit   string
 }
-func (is *IngredientStatement ) statementNode()       {}
+
+func (is *IngredientStatement) statementNode()       {}
 func (is *IngredientStatement) TokenLiteral() string { return is.token.Literal }
 func (is *IngredientStatement) String() string {
 	var out bytes.Buffer
@@ -117,6 +160,7 @@ type Parser struct {
 	curToken  Token
 	peekToken Token
 }
+
 func (p *Program) String() string {
 	var out bytes.Buffer
 	for _, s := range p.Statements {
@@ -172,12 +216,23 @@ func (p *Parser) parseStatement() Statement {
 		if p.peekTokenIs(LPAREN) {
 			return p.parseRecipeStatement()
 		} else {
-			return p.parseIngredientStatement()
+			if p.peekTokenIs(INT) {
+				return p.parseIngredientStatement()
+			} else {
+				return p.parseMealStatement()
+			}
 		}
 	default:
 		return nil
 	}
 }
+
+func (p *Parser) parseMealStatement() *MealStatement {
+	stmt := &MealStatement{token: p.curToken}
+	stmt.Name = p.curToken.Literal
+	return stmt
+}
+
 func (p *Parser) parseWeekdayStatement() *WeekdayStatement {
 	stmt := &WeekdayStatement{token: p.curToken}
 	if !p.expectPeek(LPAREN) {
@@ -185,9 +240,9 @@ func (p *Parser) parseWeekdayStatement() *WeekdayStatement {
 	}
 	for !p.peekTokenIs(RPAREN) {
 		p.nextToken()
-		stmt.Value = append(stmt.Value, p.parseStatement())
+		stmt.Meals = append(stmt.Meals, p.parseStatement())
 	}
-        p.nextToken()
+	p.nextToken()
 	return stmt
 }
 func (p *Parser) parseRecipeStatement() *RecipeStatement {
@@ -200,7 +255,7 @@ func (p *Parser) parseRecipeStatement() *RecipeStatement {
 		p.nextToken()
 		stmt.Ingredients = append(stmt.Ingredients, p.parseStatement())
 	}
-        p.nextToken()
+	p.nextToken()
 	return stmt
 }
 
@@ -225,6 +280,7 @@ type Token struct {
 	Type    TokenType
 	Literal string
 }
+
 const (
 	EOF     = "EOF"
 	ILLEGAL = "ILLEGAL"
@@ -235,12 +291,14 @@ const (
 	WEEKDAY = "WEEKDAY"
 	IDENT   = "IDENT"
 )
+
 type Lexer struct {
 	input        string
 	position     int
 	readPosition int
 	ch           byte
 }
+
 var keywords = map[string]TokenType{
 	"monday":    WEEKDAY,
 	"tuesday":   WEEKDAY,
@@ -259,6 +317,7 @@ var units = map[string]TokenType{
 	"cup":  UNIT,
 	"tbsp": UNIT,
 }
+
 func (l *Lexer) nextToken() Token {
 	var tok Token
 	l.skipWhitespace()
