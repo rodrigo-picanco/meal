@@ -79,7 +79,7 @@ func run(program *Program) {
 
         fmt.Println("Shopping list:")
         for ingredient, amount := range result {
-                fmt.Printf("%s %d%s\n", ingredient, amount, units[ingredient])
+                fmt.Printf("- %s %d%s\n", ingredient, amount, units[ingredient])
         }
 
 }

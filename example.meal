@@ -1,0 +1,25 @@
+monday (
+    toast
+    rice_and_beans
+)
+tuesday (
+    toast
+    egg_fried_rice
+)
+
+rice_and_beans (
+    laurel 1u
+    rice 100g
+    beans 100g
+    garlic 10g
+)
+egg_fried_rice (
+    rice 100g
+    egg 1u
+    ham 100g
+    scallion 1u
+)
+toast (
+    bread 1u
+    butter 25g
+)
