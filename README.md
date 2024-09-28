@@ -14,10 +14,8 @@ Meal is a dumb and simple Domain-Specific Language (DSL) implemented in Go for c
 To use Meal DSL, you need to have Go installed on your system. Then, you can install it using:
 
 ```
-go get github.com/yourusername/meal-dsl
+go get github.com/rodrigo-picanco/meal-dsl
 ```
-
-(Replace `yourusername` with your actual GitHub username)
 
 ## Usage
 
